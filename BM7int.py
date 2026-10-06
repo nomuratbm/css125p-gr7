@@ -155,3 +155,78 @@ class Parser:
                 while self.p < len(self.t) and self.t[self.p - 1][1] != ";":
                     self.p += 1
         return self.prog, self.errs
+
+# --------------------------------------------------------------- executor
+def fmt(v, typ):
+    return f"{round(v + 1e-9 * (1 if v >= 0 else -1), 2):.2f}" if typ == "double" else str(int(v))
+
+
+def run(prog):
+    env, out = {}, []
+
+    def val(o):
+        if o[0] == "num":
+            return o[1]
+        if o[1] not in env:
+            raise RuntimeError(f'Variable "{o[1]}" has no value')
+        return env[o[1]]
+
+    def ev(e):
+        terms, ops, _ = e
+        total = val(terms[0])
+        for op, t in zip(ops, terms[1:]):
+            total = total + val(t) if op == "+" else total - val(t)
+        return total
+
+    def ex(s):
+        k = s[0]
+        if k == "assign":
+            env[s[1]] = ev(s[2])
+        elif k == "out_str":
+            out.append(s[1])
+        elif k == "out":
+            out.append(fmt(ev(s[1]), s[1][2]))
+        elif k == "if":
+            a, c, b = val(s[1]), s[2], val(s[3])
+            if {">": a > b, "<": a < b, "==": a == b, "!=": a != b}[c]:
+                ex(s[4])
+
+    try:
+        for s in prog:
+            ex(s)
+    except RuntimeError as e:
+        out.append(f"Runtime error: {e}")
+    return "\n".join(out)
+
+
+# ----------------------------------------------------------- full process
+def analyze(src):
+    """Returns (nospaces_text, res_sym_text, errors, program)."""
+    nospaces = re.sub(r"[ \t]", "", src)                           # -> NOSPACES.TXT
+    toks, lex_errs = lex(src)
+    res_sym = "\n".join(t[1] for t in toks if t[0] in ("kw", "sym"))  # -> RES_SYM.TXT
+    prog, parse_errs = Parser(toks).parse()
+    return nospaces, res_sym, sorted(lex_errs + parse_errs), prog
+
+
+def main():
+    if len(sys.argv) != 2:
+        sys.exit("Usage: python BM7int.py <program.BM7>")
+    with open(sys.argv[1], encoding="utf-8") as f:
+        src = f.read()
+    nos, res, errs, prog = analyze(src)
+    with open("NOSPACES.TXT", "w") as f:
+        f.write(nos)
+    with open("RES_SYM.TXT", "w") as f:
+        f.write(res)
+    if errs:
+        print("ERROR")
+        for line, msg in errs:
+            print(f"  Line {line}: {msg}")
+    else:
+        print("NO ERROR(S) FOUND")
+        print(run(prog))
+
+
+if __name__ == "__main__":
+    main()
