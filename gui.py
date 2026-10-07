@@ -51,4 +51,12 @@ def open_file():
         put(src, open(path, encoding="utf-8").read()); execute()
 
 
+bar = tk.Frame(root); bar.pack(fill="x", padx=10, pady=6)
+tk.Button(bar, text="Open .BM7 file", command=open_file).pack(side="left")
+for name, code in SAMPLES.items():
+    tk.Button(bar, text=name, command=lambda c=code: (put(src, c), execute())).pack(side="left", padx=2)
+tk.Button(bar, text="Run BM7Int", bg="#2f5d50", fg="white", command=execute).pack(side="right")
+status.pack(pady=4)
 
+put(src, SAMPLES["PROG2"]); execute()
+root.mainloop()
