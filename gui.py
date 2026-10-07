@@ -27,5 +27,28 @@ nos = box("NOSPACES.TXT", 5)
 res = box("RES_SYM.TXT", 5)
 out = box("Program output / errors", 5)
 
+def put(widget, text):
+    widget.config(state="normal"); widget.delete("1.0", "end"); widget.insert("1.0", text)
+
+
+def execute():
+    n, r, errs, prog = analyze(src.get("1.0", "end-1c"))
+    put(nos, n); put(res, r)
+    if errs:
+        status.config(text="ERROR", fg="#b3261e")
+        put(out, "\n".join(f"Line {l}: {m}" for l, m in errs))
+    else:
+        status.config(text="NO ERROR(S) FOUND", fg="#1d7a46")
+        put(out, run(prog))
+    # write the real output files, as in the spec
+    open("NOSPACES.TXT", "w").write(n)
+    open("RES_SYM.TXT", "w").write(r)
+
+
+def open_file():
+    path = filedialog.askopenfilename(filetypes=[("BM7 files", "*.BM7 *.bm7"), ("All", "*.*")])
+    if path:
+        put(src, open(path, encoding="utf-8").read()); execute()
+
 
 
