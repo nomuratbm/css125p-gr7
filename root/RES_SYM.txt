@@ -1,0 +1,15 @@
+:
+integer
+;
+:
+double
+;
+:=
+;
+if
+(
+<
+)
+output
+<<
+;
